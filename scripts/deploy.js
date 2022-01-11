@@ -17,7 +17,7 @@ async function main() {
 
     // set lock amount
     const lockAmount = ethers.utils.parseUnits("10", "ether");
-    await nameRegister.setLockAmount(deployer).setLockTime(lockAmount);
+    await nameRegister.connect(deployer).setLockAmount(lockAmount);
 }
 
 main()

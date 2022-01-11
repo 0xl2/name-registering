@@ -9,11 +9,11 @@ import "./libraries/SafeMath.sol";
 contract TestToken is Context, IERC20, Ownable {
     using SafeMath for uint;
 
-  mapping (address => uint256) private _balances;
+  mapping (address => uint) private _balances;
 
-  mapping (address => mapping (address => uint256)) private _allowances;
+  mapping (address => mapping (address => uint)) private _allowances;
 
-  uint256 private _totalSupply;
+  uint private _totalSupply;
   uint8 public _decimals;
   string public _symbol;
   string public _name;
@@ -22,7 +22,7 @@ contract TestToken is Context, IERC20, Ownable {
     string memory name_,
     string memory symbol_,
     uint8 decimal_,
-    uint256 totalSupply_
+    uint totalSupply_
   ) {
     _name = name_;
     _symbol = symbol_;
@@ -64,14 +64,14 @@ contract TestToken is Context, IERC20, Ownable {
   /**
    * @dev See {BEP2E-totalSupply}.
    */
-  function totalSupply() external override view returns (uint256) {
+  function totalSupply() external override view returns (uint) {
     return _totalSupply;
   }
 
   /**
    * @dev See {BEP2E-balanceOf}.
    */
-  function balanceOf(address account) external override view returns (uint256) {
+  function balanceOf(address account) external override view returns (uint) {
     return _balances[account];
   }
 
@@ -83,7 +83,7 @@ contract TestToken is Context, IERC20, Ownable {
    * - `recipient` cannot be the zero address.
    * - the caller must have a balance of at least `amount`.
    */
-  function transfer(address recipient, uint256 amount) external override returns (bool) {
+  function transfer(address recipient, uint amount) external override returns (bool) {
     _transfer(_msgSender(), recipient, amount);
     return true;
   }
@@ -91,7 +91,7 @@ contract TestToken is Context, IERC20, Ownable {
   /**
    * @dev See {BEP2E-allowance}.
    */
-  function allowance(address owner, address spender) external override view returns (uint256) {
+  function allowance(address owner, address spender) external override view returns (uint) {
     return _allowances[owner][spender];
   }
 
@@ -102,7 +102,7 @@ contract TestToken is Context, IERC20, Ownable {
    *
    * - `spender` cannot be the zero address.
    */
-  function approve(address spender, uint256 amount) external override returns (bool) {
+  function approve(address spender, uint amount) external override returns (bool) {
     _approve(_msgSender(), spender, amount);
     return true;
   }
@@ -119,7 +119,7 @@ contract TestToken is Context, IERC20, Ownable {
    * - the caller must have allowance for `sender`'s tokens of at least
    * `amount`.
    */
-  function transferFrom(address sender, address recipient, uint256 amount) external override returns (bool) {
+  function transferFrom(address sender, address recipient, uint amount) external override returns (bool) {
     _transfer(sender, recipient, amount);
     _approve(sender, _msgSender(), _allowances[sender][_msgSender()].sub(amount, "BEP2E: transfer amount exceeds allowance"));
     return true;
@@ -137,7 +137,7 @@ contract TestToken is Context, IERC20, Ownable {
    *
    * - `spender` cannot be the zero address.
    */
-  function increaseAllowance(address spender, uint256 addedValue) public returns (bool) {
+  function increaseAllowance(address spender, uint addedValue) public returns (bool) {
     _approve(_msgSender(), spender, _allowances[_msgSender()][spender].add(addedValue));
     return true;
   }
@@ -156,7 +156,7 @@ contract TestToken is Context, IERC20, Ownable {
    * - `spender` must have allowance for the caller of at least
    * `subtractedValue`.
    */
-  function decreaseAllowance(address spender, uint256 subtractedValue) public returns (bool) {
+  function decreaseAllowance(address spender, uint subtractedValue) public returns (bool) {
     _approve(_msgSender(), spender, _allowances[_msgSender()][spender].sub(subtractedValue, "BEP2E: decreased allowance below zero"));
     return true;
   }
@@ -169,8 +169,8 @@ contract TestToken is Context, IERC20, Ownable {
    *
    * - `msg.sender` must be the token owner
    */
-  function mint(uint256 amount) public onlyOwner returns (bool) {
-    _mint(_msgSender(), amount);
+  function mint(address user, uint amount) public onlyOwner returns (bool) {
+    _mint(user, amount);
     return true;
   }
 
@@ -188,7 +188,7 @@ contract TestToken is Context, IERC20, Ownable {
    * - `recipient` cannot be the zero address.
    * - `sender` must have a balance of at least `amount`.
    */
-  function _transfer(address sender, address recipient, uint256 amount) internal {
+  function _transfer(address sender, address recipient, uint amount) internal {
     require(sender != address(0), "BEP2E: transfer from the zero address");
     require(recipient != address(0), "BEP2E: transfer to the zero address");
 
@@ -206,7 +206,7 @@ contract TestToken is Context, IERC20, Ownable {
    *
    * - `to` cannot be the zero address.
    */
-  function _mint(address account, uint256 amount) internal {
+  function _mint(address account, uint amount) internal {
     require(account != address(0), "BEP2E: mint to the zero address");
 
     _totalSupply = _totalSupply.add(amount);
@@ -225,7 +225,7 @@ contract TestToken is Context, IERC20, Ownable {
    * - `account` cannot be the zero address.
    * - `account` must have at least `amount` tokens.
    */
-  function _burn(address account, uint256 amount) internal {
+  function _burn(address account, uint amount) internal {
     require(account != address(0), "BEP2E: burn from the zero address");
 
     _balances[account] = _balances[account].sub(amount, "BEP2E: burn amount exceeds balance");
@@ -246,7 +246,7 @@ contract TestToken is Context, IERC20, Ownable {
    * - `owner` cannot be the zero address.
    * - `spender` cannot be the zero address.
    */
-  function _approve(address owner, address spender, uint256 amount) internal {
+  function _approve(address owner, address spender, uint amount) internal {
     require(owner != address(0), "BEP2E: approve from the zero address");
     require(spender != address(0), "BEP2E: approve to the zero address");
 
@@ -260,7 +260,7 @@ contract TestToken is Context, IERC20, Ownable {
    *
    * See {_burn} and {_approve}.
    */
-  function _burnFrom(address account, uint256 amount) internal {
+  function _burnFrom(address account, uint amount) internal {
     _burn(account, amount);
     _approve(account, _msgSender(), _allowances[account][_msgSender()].sub(amount, "BEP2E: burn amount exceeds allowance"));
   }

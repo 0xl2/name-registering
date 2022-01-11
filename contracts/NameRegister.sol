@@ -15,8 +15,8 @@ contract NameRegister is Ownable {
 
     address public immutable LockToken;
     
-    mapping(bytes => NameLock) public NameList;
-    mapping(address => bytes[]) public UserNames;
+    mapping(bytes32 => NameLock) public NameList;
+    mapping(address => bytes32[]) public UserNames;
     mapping(address => uint) public UserClaimed;
     struct NameLock {
         uint startTime;
@@ -24,8 +24,8 @@ contract NameRegister is Ownable {
         address register;
     }
 
-    event NameRegistered(bytes name, address indexed register, uint timeStamp);
-    event NameRenewed(bytes name, address indexed register, uint timeStamp);
+    event NameRegistered(bytes32 name, address indexed register, uint timeStamp);
+    event NameRenewed(bytes32 name, address indexed register, uint timeStamp);
     event WithdrawToken(address indexed withdrawer, uint amount);
 
     constructor(address _token) {
@@ -43,35 +43,39 @@ contract NameRegister is Ownable {
         lockAmount = _lockAmount;
     }
 
-    function _renew(bytes memory _name) private {
+    function _renew(bytes32 _name) private {
         NameList[_name].startTime = block.timestamp;
     }
 
-    function checkValid(bytes memory name) public view returns(bool) {
+    function checkValid(bytes32 name) public view returns(bool) {
         NameLock memory info = NameList[name];
         return info.startTime > 0 && block.timestamp <= info.startTime.add(lockTime);
     }
 
-    function nameOwner(bytes memory name) public view returns(address) {
+    function nameOwner(bytes32 name) public view returns(address) {
         return checkValid(name) ? NameList[name].register : address(0x00);
     }
 
     function userClaimable() public view returns(uint _amount) {
-        bytes[] memory nameArr = UserNames[msg.sender];
+        bytes32[] memory nameArr = UserNames[msg.sender];
         for(uint ii = 0; ii < nameArr.length; ii++) {
-            if(!checkValid(nameArr[ii])) {
+            if(!(checkValid(nameArr[ii]) && NameList[nameArr[ii]].register == msg.sender)) {
                 _amount = _amount.add(NameList[nameArr[ii]].lockedAmount);
             }
         }
     }
 
-    function registerName(bytes memory name) public returns(bool) {
+    function checkBalance() public view returns(bool) {
+        return IERC20( LockToken ).balanceOf(msg.sender) >= lockAmount;
+    }
+
+    function registerName(bytes32 name) public returns(bool) {
         require(lockAmount > 0 && lockTime > 0);
 
-        require(name.length > 0, "Name is empty");
+        require(name[0] != 0, "Name is empty");
         require(!checkValid(name), "Already registered name");
 
-        require(IERC20(LockToken).balanceOf(msg.sender) >= lockAmount, "Insufficient amount to lock");
+        require(checkBalance(), "Insufficient balance to lock");
 
         TransferHelper.safeTransferFrom(LockToken, msg.sender, address(this), lockAmount);
 
@@ -87,8 +91,8 @@ contract NameRegister is Ownable {
         return true;
     }
 
-    function renewName(bytes memory name) public returns(bool) {
-        require(name.length > 0, "Name is empty");
+    function renewName(bytes32 name) public returns(bool) {
+        require(name[0] != 0, "Name is empty");
         require(checkValid(name), "This is not registered name");
         require(nameOwner(name) == msg.sender, "Not owner");
 
